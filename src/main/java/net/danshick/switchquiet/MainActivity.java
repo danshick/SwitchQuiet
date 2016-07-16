@@ -1,14 +1,7 @@
 package net.danshick.switchquiet;
 
 import android.app.Activity;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.os.Bundle;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.widget.TextView;
 import android.widget.Switch;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -17,7 +10,6 @@ import android.content.SharedPreferences;
 public class MainActivity extends Activity
 {
     
-    private SwitchStateReceiver sReceiver;
     private Switch runSwitch;
     private Switch bootSwitch;
     private Switch maxVolSwitch;
@@ -32,7 +24,6 @@ public class MainActivity extends Activity
         
         setContentView(R.layout.main_activity);
         runSwitch = (Switch) findViewById(R.id.run_switch);
-        bootSwitch = (Switch) findViewById(R.id.boot_switch);
         maxVolSwitch = (Switch) findViewById(R.id.maxvol_switch);
         
         runSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -41,35 +32,18 @@ public class MainActivity extends Activity
             public void onCheckedChanged(CompoundButton buttonView,
               boolean isChecked) {
               if(isChecked){
-                startService(new Intent(getApplicationContext(), SQService.class));
+                edit.putBoolean("runSwitch", true);
+                edit.commit();
               }
               else{
-                stopService(new Intent(getApplicationContext(), SQService.class));
+                edit.putBoolean("runSwitch", false);
+                edit.commit();
               }
             }
         });
         
-        if(isMyServiceRunning(SQService.class)){  
+        if(preferences.getBoolean("runSwitch", true)){  
           runSwitch.setChecked(true);
-        }
-        
-        bootSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-          @Override
-            public void onCheckedChanged(CompoundButton buttonView,
-              boolean isChecked) {
-              if(isChecked){
-                edit.putBoolean("startOnBoot", true);
-                edit.commit();
-              }
-              else{
-                edit.putBoolean("startOnBoot", false);
-                edit.commit();
-              }
-            }
-        });
-        
-        if(preferences.getBoolean("startOnBoot", true)){  
-          bootSwitch.setChecked(true);
         }
         
         maxVolSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -91,29 +65,6 @@ public class MainActivity extends Activity
           maxVolSwitch.setChecked(true);
         }
         
-        sReceiver = new SwitchStateReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("net.danshick.switchquiet.SWITCH_STATE_CHANGED");
-        registerReceiver(sReceiver,filter);
-        
-    }
-    
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-      ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-      for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-        if (serviceClass.getName().equals(service.service.getClassName())) {
-          return true;
-        }
-      }
-      return false;
-    }
-    
-    class SwitchStateReceiver extends BroadcastReceiver{
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int swStateVal = intent.getIntExtra("switch_state_value", -1);
-        }
     }
 
 }

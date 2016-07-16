@@ -59,22 +59,13 @@
                 android:layout_alignParentTop="true"
                 android:textSize="18sp" 
                 android:text="Settings" />
-            
-            <Switch
-              android:id="@+id/boot_switch"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:layout_alignParentLeft="true"
-              android:layout_below="@+id/settings_title"
-              android:layout_marginTop="20dp"
-              android:text="Start service on boot" />
               
             <Switch
               android:id="@+id/maxvol_switch"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_alignParentLeft="true"
-              android:layout_below="@+id/boot_switch"
+              android:layout_below="@+id/settings_title"
               android:layout_marginTop="20dp"
               android:text="Always reset to max volume" />
  
