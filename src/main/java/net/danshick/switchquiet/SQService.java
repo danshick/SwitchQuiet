@@ -1,18 +1,34 @@
 package net.danshick.switchquiet;
 
+import android.app.Service;
+import android.os.IBinder;
 import android.content.Context;
 import android.content.Intent;
-import android.service.notification.NotificationListenerService;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.media.AudioManager;
-import android.os.CountDownTimer;
+import android.widget.Toast;
+import android.content.SharedPreferences;
 import android.util.Log;
 
-public class SQService extends NotificationListenerService {
+public class SQService extends Service {
 
     private String TAG = this.getClass().getSimpleName();
     private AudioManager am;
+    private SwitchStateReceiver sReceiver;
     private int vol;
-    private int prevIF;
+    private int maxVol;
+    private int prevSwState;
+    
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+      return Service.START_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+      return null;
+    }
     
     @Override
     public void onCreate() {
@@ -21,57 +37,61 @@ public class SQService extends NotificationListenerService {
         
         am = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         vol = am.getStreamVolume(AudioManager.STREAM_RING);
+        maxVol = am.getStreamMaxVolume(AudioManager.STREAM_RING);
+        prevSwState = -1;
         
-    }
-    
-    @Override
-    public void onListenerConnected() {
-        super.onListenerConnected();
-        Log.i(TAG, "********** SQService Listener Connected");
+        sReceiver = new SwitchStateReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("net.danshick.switchquiet.SWITCH_STATE_CHANGED");
+        registerReceiver(sReceiver,filter);
+        
     }
     
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.i(TAG, "********** SQService Destroyed");
+        unregisterReceiver(sReceiver);
     }
-    
-    @Override
-    public void onInterruptionFilterChanged(int interruptionFilter){
-      super.onInterruptionFilterChanged(interruptionFilter);
-      Log.i(TAG, "********** SQService onInterruptionFilterChanged: " + interruptionFilter);
-            
-      switch(interruptionFilter){
         
-        case INTERRUPTION_FILTER_PRIORITY:
-          
-          if(prevIF == INTERRUPTION_FILTER_ALL){
-            vol = am.getStreamVolume(AudioManager.STREAM_RING);
-          }
-          am.setStreamVolume(AudioManager.STREAM_RING, 0, 0);
-          break;
-          
-        case INTERRUPTION_FILTER_ALL: 
-          am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-          am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          //am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
-          break;
-          
+    class SwitchStateReceiver extends BroadcastReceiver{
+      
+      public void onReceive(Context context, Intent intent) {
+      
+        int swState = intent.getIntExtra("switch_state_value", -1);
+        Log.i(TAG, "********** SQService Received " + swState);
+        
+        SharedPreferences prefs = context.getSharedPreferences("sqPrefs", Context.MODE_PRIVATE);
+        
+        switch(swState){
+    
+          case 2:
+            Log.i(TAG, "********** SQService Previous State " + prevSwState);
+            if( prevSwState == -1 || prevSwState == 3 ){
+              vol = am.getStreamVolume(AudioManager.STREAM_RING);
+            }
+            Log.i(TAG, "********** SQService Volume " + vol);
+            am.setStreamVolume(AudioManager.STREAM_RING, 0, 0);
+            Toast.makeText(context, "Vibrate Mode Active", Toast.LENGTH_SHORT).show();
+            break;
+            
+          case 3: 
+            am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+            if(prefs.getBoolean("useMaxVol", false)){
+              am.setStreamVolume(AudioManager.STREAM_RING, maxVol, 0);
+            }
+            else{
+              am.setStreamVolume(AudioManager.STREAM_RING, vol, 0);
+            }
+            Toast.makeText(context, "Ring Mode Active", Toast.LENGTH_SHORT).show();
+            break;
+            
+        }
+  
+        prevSwState = swState;
+        
       }
-      
-      Intent i = new Intent("net.danshick.switchquiet.INTERRUPTION_FILTER_CHANGED");
-      i.putExtra("if_notification", Integer.toString(interruptionFilter));
-      sendBroadcast(i);
-      
-      prevIF = interruptionFilter;
-      
-    }
+    
+  }
 
 }

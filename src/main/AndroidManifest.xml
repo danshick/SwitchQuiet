@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="net.danshick.switchquiet"
-    android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+    package="net.danshick.switchquiet">
     <application android:label="SwitchQuiet">
-        <activity android:name="MainActivity">
+        <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        <activity android:name="MainActivity"
+            android:theme="@style/SQTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <receiver android:name="BootBroadcastReceiver">  
-          <intent-filter>  
-            <action android:name="android.intent.action.BOOT_COMPLETED" />  
+          <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
           </intent-filter>  
         </receiver>
         <receiver android:name="SwitchBroadcastReceiver">  
@@ -20,11 +21,10 @@
           </intent-filter>  
         </receiver>
         <service android:name="SQService"
-                 android:label="SwitchQuiet"
-                 android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
+                 android:label="SwitchQuiet">
+          <intent-filter>  
+            <action android:name="net.danshick.switchquiet.SWITCH_STATE_CHANGED" />  
+          </intent-filter> 
         </service>
     </application>
 </manifest>
